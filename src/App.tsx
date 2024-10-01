@@ -1,11 +1,9 @@
-import MainLayout from "./layout/MainLayout";
+import MainContent from "./components/MainContent/MainContent";
+
 
 function App() {
   return (
-    <MainLayout>
-      {/* <ViewerContainer /> */}
-      abc
-    </MainLayout>
+    <MainContent />
   );
 }
 
