@@ -4,7 +4,6 @@ import { memo } from "react";
 
 function Wall2D() {
   const walls = useDrawStore(state => state.walls);
-  console.log("🚀 ~ Wall2D ~ walls:", walls)
   
   return <>
     {walls.map((wall, index) => (

@@ -6,21 +6,19 @@ import { useDrawStore } from "../../../stores/draw";
 function Wall3D() {
   const { scene } = useGLTF("assets/models/4_panel.glb");
   const walls = useDrawStore(state => state.walls);
-
+  console.log("🚀 ~ Wall3D ~ walls:", walls)
   return <>
     <Instances 
-      // limit={matrix.length}
       material={(scene.children[0] as Mesh).material}
       geometry={(scene.children[0] as Mesh).geometry}
     >
       {
         walls.map((wall) => {
-          return wall?.matrix?.map((col) => {
-            return col.map((matrix, index) => {
+            return wall?.matrix?.map((matrix, index) => {
               return <InstanceWall3D key={index} matrix={matrix} />
             })
-          })
-        })
+          }
+        )
       }
     </Instances>
   </>
@@ -34,7 +32,7 @@ interface InstanceWall3DProps {
 
 const InstanceWall3D = ({ matrix }: InstanceWall3DProps) => {
   const ref = useRef<Mesh>();
-  
+  console.log('render instance wall');
   useEffect(() => {
     if (ref.current) {
       ref.current.applyMatrix4(matrix);

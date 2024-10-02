@@ -2,6 +2,8 @@ import { useThree } from "@react-three/fiber";
 import { usePointer } from "../../../hooks";
 import { useCallback, useEffect } from "react";
 import { useDrawStore } from "../../../stores/draw";
+import { HEIGHT_WALL } from "../../../constants";
+import { getPositionAxesFromPoints } from "../../../utils";
 
 function DrawWallHelper() {
   const { gl } = useThree();
@@ -14,14 +16,24 @@ function DrawWallHelper() {
       setWallDrawPoints({ start: currentPosition, end: currentPosition });
       return;
     } 
-    addWall({ start: wallDrawPoints.start, end: currentPosition });
+    addWall({ 
+      start: wallDrawPoints.start, 
+      end: getPositionAxesFromPoints(wallDrawPoints.start, currentPosition), 
+      height: HEIGHT_WALL, 
+      id: `wall_${new Date().getTime()}`
+    });
   }, [addWall, currentPosition, isDrawWall, setWallDrawPoints, wallDrawPoints.start]);
 
   useEffect(() => {
     if (!isDrawWall || !wallDrawPoints.start) return;
-    setWallDrawPoints({ start: wallDrawPoints.start, end: currentPosition });
-  }, [currentPosition, currentPosition.x, currentPosition.z, isDrawWall, resetStore, setWallDrawPoints, wallDrawPoints.start])
-
+    
+    setWallDrawPoints({ 
+      start: wallDrawPoints.start, 
+      end: getPositionAxesFromPoints(wallDrawPoints.start, currentPosition) 
+    });
+  }, [currentPosition, currentPosition.x, currentPosition.z, isDrawWall, resetStore, setWallDrawPoints, 
+    wallDrawPoints.start])
+    
   useEffect(() => {
     gl.domElement.style.cursor = "crosshair";
     gl.domElement.addEventListener('click', handleSetPoint);
@@ -31,10 +43,9 @@ function DrawWallHelper() {
     }
   }, [gl.domElement, gl.domElement.style, handleSetPoint]);
   
-
   return <>
     <mesh position={currentPosition}>
-      <boxGeometry args={[0.1, 0.1, 0.1]} />
+      <sphereGeometry args={[0.05,32,32]} />
       <meshBasicMaterial color="red" />
     </mesh>
   </>

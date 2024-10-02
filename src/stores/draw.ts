@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { IWall, TypeDraw } from "../types";
 import { Vector3 } from "three";
-import { HEIGHT_WALL, SIZE_BRICK } from "../constants";
+import { SIZE_BRICK } from "../constants";
 import { generateMatrixWallFromLength } from "../utils";
 
 interface DrawStore {
@@ -50,18 +50,16 @@ export const useDrawStore = create<DrawStore>((set) => ({
 
   walls: [],
   addWall: (wall: IWall) => {
-    const matrix = generateMatrixWallFromLength([wall.start, wall.end], HEIGHT_WALL, SIZE_BRICK);
+    const matrix = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
     set((state) => ({ 
-      walls: [...state.walls, { ...wall, matrix }], 
+      walls: [...state.walls, { ...wall, matrix}], 
       wallDrawPoints: { start: null, end: null }, 
-      isDrawWall: false 
     }));
   },
 
   resetStore: () => set({ 
     isDrawWall: false, 
     wallDrawPoints: { start: null, end: null }, 
-    walls: [], 
     isDrawDoor: false, 
     isDrawWindow: false 
   }),
