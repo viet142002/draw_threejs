@@ -13,8 +13,20 @@ interface DrawStore {
   wallDrawPoints: {
     start: Vector3 | null;
     end: Vector3 | null;
+    snap: {
+      snapStart: string | null;
+      snapEnd: string | null;
+    };
+    needRevertDirect: boolean;
   }
-  setWallDrawPoints: (points: { start: Vector3 | null; end: Vector3 | null }) => void;
+  setWallDrawPoints: (points: {
+    start: Vector3 | null;
+    end: Vector3 | null,
+    snap?: {
+      snapStart: string | null;
+      snapEnd: string | null;
+    }
+  }, needRevertDirect?: boolean) => void;
 
   walls: Array<IWall>
   addWall: (wall: IWall) => void;
@@ -45,22 +57,47 @@ export const useDrawStore = create<DrawStore>((set) => ({
   wallDrawPoints: {
     start: null,
     end: null,
+    snap: { snapStart: null, snapEnd: null },
+    needRevertDirect: false,
   },
-  setWallDrawPoints: (points) => set({ wallDrawPoints: points }),
+  setWallDrawPoints: (points, needRevertDirect) => set(state => ({
+    wallDrawPoints: {
+      ...points,
+      snap: {
+        snapStart: points.snap?.snapStart ?? state.wallDrawPoints.snap.snapStart,
+        snapEnd: points.snap?.snapEnd ?? state.wallDrawPoints.snap.snapEnd
+      },
+      needRevertDirect: needRevertDirect ?? state.wallDrawPoints.needRevertDirect
+    }
+  })),
 
   walls: [],
-  addWall: (wall: IWall) => {
-    const matrix = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
-    set((state) => ({ 
-      walls: [...state.walls, { ...wall, matrix}], 
-      wallDrawPoints: { start: null, end: null }, 
-    }));
+  addWall: (wall) => {
+    set((state) => {
+      const matrix = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
+      if (wall.snap.snapStart) {
+        const snapWall = state.walls.find(w => w.id === wall.snap.snapStart);
+        if (snapWall) {
+          snapWall.snap.snapEnd = wall.id;
+        }
+      }
+      if (wall.snap.snapEnd) {
+        const snapWall = state.walls.find(w => w.id === wall.snap.snapEnd);
+        if (snapWall) {
+          snapWall.snap.snapStart = wall.id;
+        }
+      }
+      return ({
+        walls: [...state.walls, { ...wall, matrix }],
+        wallDrawPoints: { start: null, end: null, snap: { snapStart: null, snapEnd: null }, needRevertDirect: false },
+      })
+    });
   },
 
-  resetStore: () => set({ 
-    isDrawWall: false, 
-    wallDrawPoints: { start: null, end: null }, 
-    isDrawDoor: false, 
-    isDrawWindow: false 
+  resetStore: () => set({
+    isDrawWall: false,
+    wallDrawPoints: { start: null, end: null, snap: { snapStart: null, snapEnd: null }, needRevertDirect: false },
+    isDrawDoor: false,
+    isDrawWindow: false
   }),
 }));

@@ -2,7 +2,7 @@ import { Environment, Grid, OrbitControls, PerspectiveCamera } from "@react-thre
 import { Canvas } from "@react-three/fiber";
 import { memo } from "react";
 import Wall3D from "../Wall/Wall3D/Wall3D";
-// import Corner from "../Corner/Corner";
+import Corner from "../Corner/Corner";
 
 interface Container3DViewerProps {
   className?: string;
@@ -28,7 +28,7 @@ function Container3DViewer({ className }: Container3DViewerProps) {
         <Grid args={[50, 50, 50]} />
 
         <Wall3D />
-        {/* <Corner /> */}
+        <Corner />
       </Canvas>
     </div>
   );

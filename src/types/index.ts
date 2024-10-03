@@ -9,7 +9,15 @@ export interface IWall {
   start: Vector3;
   end: Vector3;
   height: number;
-  snapStart?: string;
-  snapEnd?: string;
+  snap: {
+    snapStart: string | null;
+    snapEnd: string | null;
+  };
+  direction?: Vector3;
   matrix?: Matrix4[];
+}
+
+export interface ISnap {
+  snapStart: IWall | null;
+  snapEnd: IWall | null;
 }

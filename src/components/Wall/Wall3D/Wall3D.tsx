@@ -6,8 +6,8 @@ import { useDrawStore } from "../../../stores/draw";
 function Wall3D() {
   const { scene } = useGLTF("assets/models/4_panel.glb");
   const walls = useDrawStore(state => state.walls);
-  console.log("🚀 ~ Wall3D ~ walls:", walls)
   return <>
+     <primitive object={scene} position={[0,0,0.5]} />
     <Instances 
       material={(scene.children[0] as Mesh).material}
       geometry={(scene.children[0] as Mesh).geometry}
