@@ -1,1 +1,1 @@
-export * from './drawWall'; 
+export * from './drawWall';

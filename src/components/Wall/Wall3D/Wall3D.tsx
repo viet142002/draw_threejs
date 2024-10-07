@@ -107,7 +107,8 @@ const RemainderComponent = ({ direction, height, position }: RemainderComponentP
 
   useEffect(() => {
     if (ref.current) {
-      ref.current.applyMatrix4(matrix);
+      ref.current.matrix.copy(matrix);
+      ref.current.matrixAutoUpdate = false;
     }
   }, [matrix]);
 

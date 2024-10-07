@@ -28,4 +28,5 @@ export interface ISnap {
 export interface ICeil {
   id: string;
   points: Array<Vector3>;
+  height: number;
 }

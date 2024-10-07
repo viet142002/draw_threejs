@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { ICeil, IWall, TypeDraw } from "../types";
 import { Vector3 } from "three";
-import { SIZE_BRICK } from "../constants";
+import { SIZE_BRICK, HEIGHT_WALL } from "../constants";
 import { generateMatrixWallFromLength } from "../utils";
 
 interface DrawStore {
@@ -114,9 +114,10 @@ export const useDrawStore = create<DrawStore>((set) => ({
         newCeil = {
           id: `ceil-${new Date().getTime()}`,
           points: [
-            wall.start.clone().add(new Vector3(0, wall.height, 0)),
-            wall.end.clone().add(new Vector3(0, wall.height, 0))
-          ]
+            wall.start.clone().add(new Vector3(0, 0, 0)),
+            wall.end.clone().add(new Vector3(0, 0, 0))
+          ],
+          height: wall.height
         };
         wall.ceil = newCeil.id;
       }
@@ -131,15 +132,22 @@ export const useDrawStore = create<DrawStore>((set) => ({
   updateWall: (id, data) => {
     set((state) => {
       const wall = state.walls.find(w => w.id === id);
+      let isChangeCeilHeight = false;
       if (wall) {
         Object.assign(wall, data);
         if (data.height) {
           const { matrices } = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
           wall.matrix = matrices;
+          const ceil = state.ceils.find(c => c.id === wall.ceil);
+          if (ceil && ceil.height < wall.height) {
+            isChangeCeilHeight = true;
+            ceil.height = wall.height;
+          }
         }
       }
       return ({
         walls: [...state.walls],
+        ceils: isChangeCeilHeight ? [...state.ceils] : state.ceils
       })
     });
   },
@@ -180,7 +188,7 @@ export const useDrawStore = create<DrawStore>((set) => ({
     set((state) => {
       const id = `ceil-${state.ceils.length + 1}`;
       return ({
-        ceils: [...state.ceils, { id, points }],
+        ceils: [...state.ceils, { id, points, height: HEIGHT_WALL }],
       })
     });
   },
