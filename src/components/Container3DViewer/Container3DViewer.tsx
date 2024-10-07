@@ -22,6 +22,9 @@ function Container3DViewer({ className }: Container3DViewerProps) {
         gl={{
           antialias: true,
         }}
+        onCreated={({ gl }) => {
+          gl.localClippingEnabled = true;
+        }}
       >
         <PerspectiveCamera makeDefault position={[0, 1, 5]} near={0.001} far={1000} />
         <Environment preset="sunset" />

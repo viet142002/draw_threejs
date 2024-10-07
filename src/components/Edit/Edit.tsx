@@ -29,7 +29,9 @@ function Edit() {
           Selected: {selected.type} {selected.id}
         </h4>
         <form className="space-x-2" onSubmit={handleUpdate}>
-          <input type="number" name="height" defaultValue={selected.height} className="py-1 px-2 bg-gray-200 rounded-md" />
+          <input type="number" name="height" defaultValue={selected.height} className="py-1 px-2 bg-gray-200 rounded-md"
+            step={0.1}
+          />
           <button
             type="submit"
             className="bg-blue-500 text-white px-2 py-1 rounded-md"
@@ -38,7 +40,6 @@ function Edit() {
           </button>
         </form>
         <div>
-
           <button className="bg-red-500 text-white px-2 py-1 rounded-md"
             onClick={handleRemove}
           >Delete</button>

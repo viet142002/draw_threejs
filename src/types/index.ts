@@ -9,11 +9,13 @@ export interface IWall {
   start: Vector3;
   end: Vector3;
   height: number;
+  numberOfBrick: number;
+  remainingLength: number;
+  direction: Vector3;
   snap: {
     snapStart: string | null;
     snapEnd: string | null;
   };
-  direction?: Vector3;
   matrix?: Matrix4[];
   ceil: string | null;
 }

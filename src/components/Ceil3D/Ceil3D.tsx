@@ -1,14 +1,10 @@
 import * as THREE from "three";
 import { useDrawStore } from "../../stores/draw";
-import { memo, useEffect, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { Shape } from "@react-three/drei";
 
 function Ceil3D() {
   const ceils = useDrawStore(state => state.ceils);
-  useEffect(() => {
-    console.log("🚀 ~ Ceil3D ~ ceils:", ceils)
-  }, [ceils])
-
   return <>
     {
       ceils.map(ceil => (
@@ -37,7 +33,8 @@ const CeilItem = ({ points }: { points: Array<THREE.Vector3> }) => {
     shape.lineTo(points[0].x - center.x, points[0].z - center.z);
 
     return { shape, center, height };
-  }, [points]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points, points.length]);
 
   if (points.length < 3) return null;
   return <group position={[center.x, height, center.z]}>

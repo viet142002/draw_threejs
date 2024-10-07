@@ -7,7 +7,8 @@ export const getLengthWall = (points: [Vector3, Vector3], brickWidth: number) =>
   const numberOfBrick = Math.floor(wallLength / (brickWidth - SPACE));
   const remainingLength = wallLength - (numberOfBrick * (brickWidth - SPACE));
   return {
-    numberOfBrick: remainingLength > 0 ? numberOfBrick + 1 : numberOfBrick,
+    numberOfBrick: numberOfBrick,
+    // numberOfBrick: remainingLength > 0 ? numberOfBrick + 1 : numberOfBrick,
     wallLength,
     remainingLength,
   };
@@ -34,31 +35,18 @@ export const generateMatrixWallFromLength = (
 
   const matrices: Matrix4[] = [];
 
-  for (let i = 0; i < numberOfBrick; i++) {
+  const totalBrick = remainingLength > 0 ? numberOfBrick + 1 : numberOfBrick;
+  for (let i = 0; i < totalBrick; i++) {
     const m = new Matrix4();
-    const isLastBrick = i === numberOfBrick - 1;
-
-    if (isLastBrick && remainingLength > 0) {
-      const position = new Vector3().addVectors(
-        startPoint,
-        new Vector3(
-          direction.x * (sizeBrick.width - SPACE) * (i - 1) + direction.x * remainingLength,
-          0,
-          direction.z * (sizeBrick.width - SPACE) * (i - 1) + direction.z * remainingLength
-        ),
-      );
-      m.compose(position, rotation, scale);
-    } else {
-      const position = new Vector3().addVectors(
-        startPoint,
-        direction.clone().multiplyScalar((sizeBrick.width - SPACE) * i)
-      );
-      m.compose(position, rotation, scale);
-    }
+    const position = new Vector3().addVectors(
+      startPoint,
+      direction.clone().multiplyScalar((sizeBrick.width - SPACE) * i)
+    );
+    m.compose(position, rotation, scale);
     matrices.push(m);
   }
 
-  return matrices;
+  return { matrices, numberOfBrick, remainingLength, direction };
 }
 
 export const getPositionAxesFromPoints = (start: Vector3, target: Vector3) => {

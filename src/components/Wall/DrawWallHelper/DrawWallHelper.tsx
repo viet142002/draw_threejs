@@ -38,7 +38,8 @@ function DrawWallHelper() {
         snapStart: wallDrawPoints.snap.snapStart ?? null,
         snapEnd: wallDrawPoints.snap.snapEnd ?? null
       },
-      ceil: null
+      ceil: null,
+
     });
   }, [addWall, currentPosition, isDrawWall, setWallDrawPoints, wallDrawPoints.needRevertDirect, wallDrawPoints.snap.snapEnd, wallDrawPoints.snap.snapStart, wallDrawPoints.start, walls]);
 

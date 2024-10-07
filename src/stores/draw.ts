@@ -29,7 +29,7 @@ interface DrawStore {
   }, needRevertDirect?: boolean) => void;
 
   walls: Array<IWall>
-  addWall: (wall: IWall) => void;
+  addWall: (wall: Omit<IWall, 'numberOfBrick' | 'remainingLength' | 'direction'>) => void;
   updateWall: (id: string, data: Partial<IWall>) => void;
   removeWall: (id: string) => void;
 
@@ -84,7 +84,7 @@ export const useDrawStore = create<DrawStore>((set) => ({
   addWall: (wall) => {
     set((state) => {
       let newCeil: ICeil | null = null;
-      const matrix = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
+      const { matrices: matrix, numberOfBrick, remainingLength, direction } = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
 
       if (wall.snap.snapStart) {
         const snapWall = state.walls.find(w => w.id === wall.snap.snapStart);
@@ -122,7 +122,7 @@ export const useDrawStore = create<DrawStore>((set) => ({
       }
 
       return ({
-        walls: [...state.walls, { ...wall, matrix }],
+        walls: [...state.walls, { ...wall, matrix, numberOfBrick, remainingLength, direction }],
         wallDrawPoints: initWallDrawPoints,
         ceils: newCeil ? [...state.ceils, newCeil] : [...state.ceils],
       })
@@ -134,7 +134,8 @@ export const useDrawStore = create<DrawStore>((set) => ({
       if (wall) {
         Object.assign(wall, data);
         if (data.height) {
-          wall.matrix = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
+          const { matrices } = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
+          wall.matrix = matrices;
         }
       }
       return ({
