@@ -94,6 +94,7 @@ export const useDrawStore = create<DrawStore>((set) => ({
           const ceil = state.ceils.find(c => c.id === snapWall.ceil);
           if (ceil) {
             ceil.points.push(wall.end.clone().add(new Vector3(0, wall.height, 0)));
+            ceil.height = [...ceil.height, wall.height];
           }
         }
       }
@@ -105,10 +106,10 @@ export const useDrawStore = create<DrawStore>((set) => ({
           const ceil = state.ceils.find(c => c.id === snapWall.ceil);
           if (ceil) {
             ceil.points = [wall.start.clone().add(new Vector3(0, wall.height, 0)), ...ceil.points];
+            ceil.height = [wall.height, ...ceil.height];
           }
         }
       }
-
 
       if (!wall.ceil) {
         newCeil = {
@@ -117,7 +118,7 @@ export const useDrawStore = create<DrawStore>((set) => ({
             wall.start.clone().add(new Vector3(0, 0, 0)),
             wall.end.clone().add(new Vector3(0, 0, 0))
           ],
-          height: wall.height
+          height: [wall.height]
         };
         wall.ceil = newCeil.id;
       }
@@ -134,14 +135,20 @@ export const useDrawStore = create<DrawStore>((set) => ({
       const wall = state.walls.find(w => w.id === id);
       let isChangeCeilHeight = false;
       if (wall) {
+        const oldHeight = wall.height;
         Object.assign(wall, data);
         if (data.height) {
           const { matrices } = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
           wall.matrix = matrices;
           const ceil = state.ceils.find(c => c.id === wall.ceil);
-          if (ceil && ceil.height < wall.height) {
+          if (ceil) {
+            const index = ceil.height.findIndex(h => h === oldHeight);
+            if (index === -1) {
+              ceil.height.push(wall.height);
+            } else {
+              ceil.height[index] = wall.height;
+            }
             isChangeCeilHeight = true;
-            ceil.height = wall.height;
           }
         }
       }
@@ -188,7 +195,7 @@ export const useDrawStore = create<DrawStore>((set) => ({
     set((state) => {
       const id = `ceil-${state.ceils.length + 1}`;
       return ({
-        ceils: [...state.ceils, { id, points, height: HEIGHT_WALL }],
+        ceils: [...state.ceils, { id, points, height: [HEIGHT_WALL] }],
       })
     });
   },

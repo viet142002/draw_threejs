@@ -1,6 +1,6 @@
 import { useThree } from "@react-three/fiber";
 import { usePointer } from "../../../hooks";
-import { memo, useCallback, useEffect } from "react";
+import { memo, useCallback, useEffect, useMemo } from "react";
 import { useDrawStore } from "../../../stores/draw";
 import { HEIGHT_WALL } from "../../../constants";
 import { getPositionAxesFromPoints, getSnapWall } from "../../../utils";
@@ -50,7 +50,7 @@ function DrawWallHelper() {
       start: wallDrawPoints.start,
       end: getPositionAxesFromPoints(wallDrawPoints.start, currentPosition)
     });
-  }, [currentPosition, currentPosition.x, currentPosition.z, isDrawWall, setWallDrawPoints, wallDrawPoints.needRevertDirect, wallDrawPoints.start])
+  }, [currentPosition, currentPosition.x, currentPosition.z, isDrawWall, setWallDrawPoints, wallDrawPoints.needRevertDirect, wallDrawPoints.start]);
 
   useEffect(() => {
     gl.domElement.style.cursor = "crosshair";
@@ -61,8 +61,13 @@ function DrawWallHelper() {
     }
   }, [gl.domElement, gl.domElement.style, handleSetPoint]);
 
+  const p = useMemo(() => {
+    const po = getSnapWall(walls, currentPosition);
+    return po.snapEnd?.end ?? po.snapStart?.start ?? currentPosition;
+  }, [currentPosition, walls]);
+
   return <>
-    <mesh position={currentPosition}>
+    <mesh position={p}>
       <sphereGeometry args={[0.05, 32, 32]} />
       <meshBasicMaterial color="red" />
     </mesh>

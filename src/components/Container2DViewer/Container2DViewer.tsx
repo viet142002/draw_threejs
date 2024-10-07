@@ -20,11 +20,10 @@ function Container2DViewer({ className }: Container2DViewerProps) {
       }}
     >
       <Canvas
+        orthographic
         camera={{
           position: [0, 5, 0],
-          near: 0.1,
-          far: 1000,
-          fov: 65,
+          zoom: 100,
         }}
         gl={{
           antialias: true,

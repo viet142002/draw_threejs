@@ -14,7 +14,8 @@ function Ceil3D() {
 
 export default memo(Ceil3D);
 
-const CeilItem = ({ points, height }: { points: Array<THREE.Vector3>, height: number }) => {
+const CeilItem = ({ points, height }: { points: Array<THREE.Vector3>, height: Array<number> }) => {
+  console.log("🚀 ~ CeilItem ~ height:", height)
   const { shape, center } = useMemo(() => {
     const shape = new THREE.Shape();
     const center = new THREE.Vector3();
@@ -31,10 +32,10 @@ const CeilItem = ({ points, height }: { points: Array<THREE.Vector3>, height: nu
     return { shape, center };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points, points.length]);
-
+  const maxHeight = Math.max(...height);
 
   if (points.length < 3) return null;
-  return <group position={[center.x, height, center.z]}>
+  return <group position={[center.x, maxHeight, center.z]}>
     <Shape args={[shape]} rotation={[Math.PI / 2, 0, 0]} >
       <meshStandardMaterial color={'red'} side={THREE.DoubleSide} />
     </Shape>
