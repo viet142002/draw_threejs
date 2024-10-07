@@ -5,11 +5,12 @@ import DrawWallHelper from "../Wall/DrawWallHelper/DrawWallHelper";
 function DrawContainer() {
   const { isDrawWall } = useDrawStore(state => state);
   return <>
-    {isDrawWall && 
-    <>
-      <DrawWall />
-      <DrawWallHelper />
-    </>}
+    {isDrawWall &&
+      <>
+        <DrawWall />
+        <DrawWallHelper />
+      </>
+    }
   </>
 }
 

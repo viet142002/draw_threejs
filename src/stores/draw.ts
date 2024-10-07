@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { IWall, TypeDraw } from "../types";
+import { ICeil, IWall, TypeDraw } from "../types";
 import { Vector3 } from "three";
 import { SIZE_BRICK } from "../constants";
 import { generateMatrixWallFromLength } from "../utils";
@@ -30,8 +30,22 @@ interface DrawStore {
 
   walls: Array<IWall>
   addWall: (wall: IWall) => void;
+  updateWall: (id: string, data: Partial<IWall>) => void;
+  removeWall: (id: string) => void;
+
+  ceils: Array<ICeil>;
+  createCeil: (points: Array<Vector3>) => void;
+  addPointToCeil: (id: string, point: Vector3) => void;
 
   resetStore: () => void;
+}
+
+const initWallDrawPoints = {
+  start: null,
+  end: null,
+  snap: { snapStart: null, snapEnd: null },
+  needRevertDirect: false,
+  ceil: null
 }
 
 export const useDrawStore = create<DrawStore>((set) => ({
@@ -54,12 +68,7 @@ export const useDrawStore = create<DrawStore>((set) => ({
     }
   },
 
-  wallDrawPoints: {
-    start: null,
-    end: null,
-    snap: { snapStart: null, snapEnd: null },
-    needRevertDirect: false,
-  },
+  wallDrawPoints: initWallDrawPoints,
   setWallDrawPoints: (points, needRevertDirect) => set(state => ({
     wallDrawPoints: {
       ...points,
@@ -74,29 +83,121 @@ export const useDrawStore = create<DrawStore>((set) => ({
   walls: [],
   addWall: (wall) => {
     set((state) => {
+      let newCeil: ICeil | null = null;
       const matrix = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
+
       if (wall.snap.snapStart) {
         const snapWall = state.walls.find(w => w.id === wall.snap.snapStart);
         if (snapWall) {
           snapWall.snap.snapEnd = wall.id;
+          wall.ceil = snapWall.ceil;
+          const ceil = state.ceils.find(c => c.id === snapWall.ceil);
+          if (ceil) {
+            ceil.points.push(wall.end.clone().add(new Vector3(0, wall.height, 0)));
+          }
         }
       }
       if (wall.snap.snapEnd) {
         const snapWall = state.walls.find(w => w.id === wall.snap.snapEnd);
         if (snapWall) {
           snapWall.snap.snapStart = wall.id;
+          wall.ceil = snapWall.ceil;
+          const ceil = state.ceils.find(c => c.id === snapWall.ceil);
+          if (ceil) {
+            ceil.points = [wall.start.clone().add(new Vector3(0, wall.height, 0)), ...ceil.points];
+          }
+        }
+      }
+
+
+      if (!wall.ceil) {
+        newCeil = {
+          id: `ceil-${new Date().getTime()}`,
+          points: [
+            wall.start.clone().add(new Vector3(0, wall.height, 0)),
+            wall.end.clone().add(new Vector3(0, wall.height, 0))
+          ]
+        };
+        wall.ceil = newCeil.id;
+      }
+
+      return ({
+        walls: [...state.walls, { ...wall, matrix }],
+        wallDrawPoints: initWallDrawPoints,
+        ceils: newCeil ? [...state.ceils, newCeil] : [...state.ceils],
+      })
+    });
+  },
+  updateWall: (id, data) => {
+    set((state) => {
+      const wall = state.walls.find(w => w.id === id);
+      if (wall) {
+        Object.assign(wall, data);
+        if (data.height) {
+          wall.matrix = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
         }
       }
       return ({
-        walls: [...state.walls, { ...wall, matrix }],
-        wallDrawPoints: { start: null, end: null, snap: { snapStart: null, snapEnd: null }, needRevertDirect: false },
+        walls: [...state.walls],
+      })
+    });
+  },
+  removeWall: (id) => {
+    set((state) => {
+      const wall = state.walls.find(w => w.id === id);
+      if (wall) {
+        if (wall.snap.snapStart) {
+          const snapWall = state.walls.find(w => w.id === wall.snap.snapStart);
+          if (snapWall) {
+            snapWall.snap.snapEnd = null;
+            const ceil = state.ceils.find(c => c.id === snapWall.ceil);
+            if (ceil) {
+              ceil.points = ceil.points.filter(p => p !== wall.start);
+            }
+          }
+        }
+        if (wall.snap.snapEnd) {
+          const snapWall = state.walls.find(w => w.id === wall.snap.snapEnd);
+          if (snapWall) {
+            snapWall.snap.snapStart = null;
+            const ceil = state.ceils.find(c => c.id === snapWall.ceil);
+            if (ceil) {
+              ceil.points = ceil.points.filter(p => p !== wall.end);
+            }
+          }
+        }
+      }
+      return ({
+        walls: state.walls.filter(w => w.id !== id),
+        ceils: state.ceils.filter(c => c.id !== wall?.ceil)
+      })
+    });
+  },
+
+  ceils: [],
+  createCeil: (points) => {
+    set((state) => {
+      const id = `ceil-${state.ceils.length + 1}`;
+      return ({
+        ceils: [...state.ceils, { id, points }],
+      })
+    });
+  },
+  addPointToCeil: (id, point) => {
+    set((state) => {
+      const ceil = state.ceils.find(c => c.id === id);
+      if (ceil) {
+        ceil.points.push(point);
+      }
+      return ({
+        ceils: [...state.ceils],
       })
     });
   },
 
   resetStore: () => set({
     isDrawWall: false,
-    wallDrawPoints: { start: null, end: null, snap: { snapStart: null, snapEnd: null }, needRevertDirect: false },
+    wallDrawPoints: initWallDrawPoints,
     isDrawDoor: false,
     isDrawWindow: false
   }),

@@ -10,37 +10,37 @@ function DrawWallHelper() {
   const { currentPosition } = usePointer();
   const { setWallDrawPoints, wallDrawPoints, isDrawWall, addWall, walls } = useDrawStore(state => state);
 
+  // set point for draw wall start and end
   const handleSetPoint = useCallback(() => {
     if (!isDrawWall) return;
-    console.log('render handleSetPoint');
-
     const snap = getSnapWall(walls, currentPosition);
-    console.log("🚀 ~ handleSetPoint ~ snap:", snap);
     if (!wallDrawPoints.start) {
       setWallDrawPoints(
         {
-          start: currentPosition,
-          end: currentPosition,
+          start: snap?.snapEnd?.end ?? snap?.snapStart?.start ?? currentPosition,
+          end: snap?.snapEnd?.end ?? snap?.snapStart?.start ?? currentPosition,
           snap: {
             snapStart: snap?.snapEnd?.id ?? null,
             snapEnd: snap?.snapStart?.id ?? null
-          }
+          },
         },
         snap?.snapStart ? true : false
       );
       return;
     }
+
     addWall({
       start: wallDrawPoints.needRevertDirect ? getPositionAxesFromPoints(wallDrawPoints.start, currentPosition) : wallDrawPoints.start,
       end: wallDrawPoints.needRevertDirect ? wallDrawPoints.start : getPositionAxesFromPoints(wallDrawPoints.start, currentPosition),
       height: HEIGHT_WALL,
       id: `wall_${new Date().getTime()}`,
       snap: {
-        snapStart: snap?.snapEnd?.id ?? null,
-        snapEnd: snap?.snapStart?.id ?? null
-      }
+        snapStart: wallDrawPoints.snap.snapStart ?? null,
+        snapEnd: wallDrawPoints.snap.snapEnd ?? null
+      },
+      ceil: null
     });
-  }, [addWall, currentPosition, isDrawWall, setWallDrawPoints, wallDrawPoints.needRevertDirect, wallDrawPoints.start, walls]);
+  }, [addWall, currentPosition, isDrawWall, setWallDrawPoints, wallDrawPoints.needRevertDirect, wallDrawPoints.snap.snapEnd, wallDrawPoints.snap.snapStart, wallDrawPoints.start, walls]);
 
   // draw wall realtime
   useEffect(() => {

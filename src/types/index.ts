@@ -1,5 +1,5 @@
 import { Matrix4, Vector3 } from "three";
-
+export * from './util';
 export type TypeDraw = 'wall' | 'door' | 'window';
 
 export type Point3 = [number, number, number] | Vector3;
@@ -15,9 +15,15 @@ export interface IWall {
   };
   direction?: Vector3;
   matrix?: Matrix4[];
+  ceil: string | null;
 }
 
 export interface ISnap {
   snapStart: IWall | null;
   snapEnd: IWall | null;
+}
+
+export interface ICeil {
+  id: string;
+  points: Array<Vector3>;
 }

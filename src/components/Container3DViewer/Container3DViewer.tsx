@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { memo } from "react";
 import Wall3D from "../Wall/Wall3D/Wall3D";
 import Corner from "../Corner/Corner";
+import Ceil3D from "../Ceil3D/Ceil3D";
 
 interface Container3DViewerProps {
   className?: string;
@@ -29,6 +30,7 @@ function Container3DViewer({ className }: Container3DViewerProps) {
 
         <Wall3D />
         <Corner />
+        <Ceil3D />
       </Canvas>
     </div>
   );

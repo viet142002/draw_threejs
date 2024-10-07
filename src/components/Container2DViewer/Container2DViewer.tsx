@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { Environment, Grid, OrbitControls } from "@react-three/drei";
 import DrawContainer from "../DrawContainer/DrawContainer";
 import Wall2D from "../Wall/Wall2D/Wall2D";
+import Edit from "../Edit/Edit";
 
 interface Container2DViewerProps {
   className?: string;
@@ -30,16 +31,17 @@ function Container2DViewer({ className }: Container2DViewerProps) {
         }}
       >
         <Environment preset="studio" />
-        <OrbitControls 
+        <OrbitControls
           makeDefault
           enableRotate={false}
         />
         <Grid args={[50, 50, 50]} />
-        
+
         <DrawContainer />
 
         <Wall2D />
       </Canvas>
+      <Edit />
     </div>
   );
 }
