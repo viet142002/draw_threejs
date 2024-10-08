@@ -1,6 +1,6 @@
-import { useGLTF } from "@react-three/drei";
+import { Text, useGLTF } from "@react-three/drei";
 import { useEffect, useRef } from "react";
-import { Group } from "three";
+import { Group, Vector3 } from "three";
 import { rotateCorner } from "../../utils/rotateCorner";
 
 function Corner() {
@@ -19,6 +19,12 @@ function Corner() {
     <>
       {/* <primitive object={scene3} ref={ref} />
       <primitive object={scene2} position={[1, 0, 0]} /> */}
+      <Text
+        fontSize={0.1}
+        rotation-x={-Math.PI / 2}
+      >
+        Hello world
+      </Text>
     </>
   )
 }

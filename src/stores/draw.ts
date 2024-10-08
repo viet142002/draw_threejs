@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ICeil, IWall, TypeDraw } from "../types";
+import { ICeil, IDim, ISnap, IWall, TypeDraw } from "../types";
 import { Vector3 } from "three";
 import { SIZE_BRICK, HEIGHT_WALL } from "../constants";
 import { generateMatrixWallFromLength } from "../utils";
@@ -13,19 +13,13 @@ interface DrawStore {
   wallDrawPoints: {
     start: Vector3 | null;
     end: Vector3 | null;
-    snap: {
-      snapStart: string | null;
-      snapEnd: string | null;
-    };
+    snap: ISnap;
     needRevertDirect: boolean;
   }
   setWallDrawPoints: (points: {
     start: Vector3 | null;
     end: Vector3 | null,
-    snap?: {
-      snapStart: string | null;
-      snapEnd: string | null;
-    }
+    snap?: ISnap,
   }, needRevertDirect?: boolean) => void;
 
   walls: Array<IWall>
@@ -36,6 +30,11 @@ interface DrawStore {
   ceils: Array<ICeil>;
   createCeil: (points: Array<Vector3>) => void;
   addPointToCeil: (id: string, point: Vector3) => void;
+
+  dims: Array<IDim>;
+  addDim: (dim: IDim) => void;
+  removeDimByWallId: (id: string) => void;
+  updateDim: (id: string, data: Partial<IDim>) => void
 
   resetStore: () => void;
 }
@@ -127,7 +126,7 @@ export const useDrawStore = create<DrawStore>((set) => ({
         walls: [...state.walls, { ...wall, matrix, numberOfBrick, remainingLength, direction }],
         wallDrawPoints: initWallDrawPoints,
         ceils: newCeil ? [...state.ceils, newCeil] : [...state.ceils],
-      })
+      });
     });
   },
   updateWall: (id, data) => {
@@ -155,13 +154,15 @@ export const useDrawStore = create<DrawStore>((set) => ({
       return ({
         walls: [...state.walls],
         ceils: isChangeCeilHeight ? [...state.ceils] : state.ceils
-      })
+      });
     });
   },
+  // TODO: Fix when remove wall, remove ceil then ceil not display
   removeWall: (id) => {
     set((state) => {
       const wall = state.walls.find(w => w.id === id);
       if (wall) {
+        state.removeDimByWallId(wall.id);
         if (wall.snap.snapStart) {
           const snapWall = state.walls.find(w => w.id === wall.snap.snapStart);
           if (snapWall) {
@@ -186,7 +187,7 @@ export const useDrawStore = create<DrawStore>((set) => ({
       return ({
         walls: state.walls.filter(w => w.id !== id),
         ceils: state.ceils.filter(c => c.id !== wall?.ceil)
-      })
+      });
     });
   },
 
@@ -196,7 +197,7 @@ export const useDrawStore = create<DrawStore>((set) => ({
       const id = `ceil-${state.ceils.length + 1}`;
       return ({
         ceils: [...state.ceils, { id, points, height: [HEIGHT_WALL] }],
-      })
+      });
     });
   },
   addPointToCeil: (id, point) => {
@@ -207,9 +208,27 @@ export const useDrawStore = create<DrawStore>((set) => ({
       }
       return ({
         ceils: [...state.ceils],
-      })
+      });
     });
   },
+
+  dims: [],
+  addDim: (dim) => set((state) => ({
+    dims: [...state.dims, dim]
+  })),
+  removeDimByWallId: (id) => set(state => {
+    return {
+      dims: state.dims.filter(d => d.wallId !== id)
+    };
+  }),
+  updateDim: (id, data) => set(state => {
+    const dim = state.dims.find(d => d.id === id);
+    if (!dim) return state;
+    Object.assign(dim, data);
+    return {
+      dims: [...state.dims]
+    };
+  }),
 
   resetStore: () => set({
     isDrawWall: false,

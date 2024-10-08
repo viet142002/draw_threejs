@@ -25,8 +25,21 @@ export interface ISnap {
   snapEnd: IWall | null;
 }
 
+export interface ISnapString {
+  snapStart: string | null;
+  snapEnd: string | null;
+}
+
 export interface ICeil {
   id: string;
   points: Array<Vector3>;
   height: Array<number>;
+}
+
+export interface IDim {
+  id: string;
+  wallId: string;
+  start: Vector3;
+  end: Vector3;
+  distance: number;
 }

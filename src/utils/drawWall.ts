@@ -85,3 +85,13 @@ export const getSnapWall = (walls: Array<IWall>, position: Vector3) => {
   }
   return snap;
 };
+
+export const getDirectionString = (start?: Vector3 | null, end?: Vector3 | null) => {
+  if (!start || !end) return null;
+  const direction = new Vector3().subVectors(end, start).normalize();
+  if (direction.x > 0) return 'x';
+  if (direction.x < 0) return '-x';
+  if (direction.z < 0) return '-z';
+  if (direction.z > 0) return 'z';
+  return null;
+}
