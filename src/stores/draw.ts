@@ -31,6 +31,7 @@ interface DrawStore {
   createCeil: (ceil: ICeil) => void;
   addWallBeginToCei: (ceilId: string, wallId: string) => void;
   addWallFinalToCei: (ceilId: string, wallId: string) => void;
+  addWallBetweenToCei: (ceilId: string, wallId: string, startId: string, ceilNeedRemove: string) => void;
   removeCeilByWallId: (wallId: string, ceilId: string) => void;
 
   dims: Array<IDim>;
@@ -85,7 +86,7 @@ export const useDrawStore = create<DrawStore>((set) => ({
   addWall: (wall) => {
     set((state) => {
       const { matrices: matrix, numberOfBrick, remainingLength, direction } = generateMatrixWallFromLength([wall.start, wall.end], wall.height, SIZE_BRICK);
-      if (wall.snap.snapStart) {
+      if (wall.snap.snapStart && !wall.snap.snapEnd) {
         const snapWall = state.walls.find(w => w.id === wall.snap.snapStart);
         if (snapWall) {
           snapWall.snap.snapEnd = wall.id;
@@ -95,13 +96,26 @@ export const useDrawStore = create<DrawStore>((set) => ({
           }
         }
       }
-      if (wall.snap.snapEnd) {
+      if (wall.snap.snapEnd && !wall.snap.snapStart) {
         const snapWall = state.walls.find(w => w.id === wall.snap.snapEnd);
         if (snapWall) {
           snapWall.snap.snapStart = wall.id;
           wall.ceil = snapWall.ceil;
           if (wall.ceil) {
             state.addWallBeginToCei(wall.ceil, wall.id)
+          }
+        }
+      }
+      if (wall.snap.snapStart && wall.snap.snapEnd) {
+        const snapWallStart = state.walls.find(w => w.id === wall.snap.snapStart);
+        const snapWallEnd = state.walls.find(w => w.id === wall.snap.snapEnd);
+        if (snapWallStart && snapWallEnd) {
+          snapWallStart.snap.snapEnd = wall.id;
+          snapWallEnd.snap.snapStart = wall.id;
+          const ceilId = snapWallStart.ceil;
+          wall.ceil = ceilId;
+          if (ceilId && snapWallStart.ceil !== snapWallEnd.ceil && snapWallEnd.ceil) {
+            state.addWallBetweenToCei(ceilId, wall.id, snapWallStart.id, snapWallEnd.ceil)
           }
         }
       }
@@ -134,13 +148,12 @@ export const useDrawStore = create<DrawStore>((set) => ({
       });
     });
   },
-  // TODO: Fix when remove wall, remove ceil then ceil not display
   removeWall: (id) => {
     set((state) => {
       const wall = state.walls.find(w => w.id === id);
       if (wall) {
         state.removeDimByWallId(wall.id);
-        if (wall?.ceil) state.removeCeilByWallId(wall.id, wall.ceil)
+        // if (wall?.ceil) state.removeCeilByWallId(wall.id, wall.ceil)
         if (wall.snap.snapStart) {
           const snapWall = state.walls.find(w => w.id === wall.snap.snapStart);
           if (snapWall) {
@@ -153,6 +166,24 @@ export const useDrawStore = create<DrawStore>((set) => ({
             snapWall.snap.snapStart = null;
           }
         }
+        if (wall.ceil) {
+          const ceil = state.ceils.find(c => c.id === wall.ceil);
+          if (ceil) {
+            const index = ceil.wallIds.indexOf(wall.id);
+            if (index > -1 && index < ceil.wallIds.length - 1) {
+              const wallRight = ceil.wallIds.slice(index + 1);
+              ceil.wallIds = ceil.wallIds.slice(0, index);
+              const newCeilId = `ceil-${Date.now()}`;
+              const newCeil = { id: newCeilId, wallIds: wallRight };
+              state.createCeil(newCeil);
+              wallRight.forEach(wId => {
+                const wall = state.walls.find(wa => wa.id === wId);
+                if (wall) wall.ceil = newCeilId;
+              });
+            }
+          }
+        }
+
       }
       return ({
         walls: state.walls.filter(w => w.id !== id),
@@ -193,6 +224,24 @@ export const useDrawStore = create<DrawStore>((set) => ({
       return state;
     }
     ceil.wallIds.push(wallId);
+    return {
+      ceils: [...state.ceils]
+    }
+  }),
+  addWallBetweenToCei: (ceilId, wallId, startId, ceilNeedRemove) => set(state => {
+    const ceilRemove = state.ceils.find(c => c.id === ceilNeedRemove);
+    state.ceils = state.ceils.filter(c => c.id !== ceilNeedRemove);
+    const ceil = state.ceils.find(c => c.id === ceilId);
+    if (!ceil) {
+      return state;
+    }
+    const index = ceil.wallIds.indexOf(startId);
+    if (index > -1) {
+      ceil.wallIds.splice(index + 1, 0, wallId);
+      if (ceilRemove) {
+        ceil.wallIds = [...ceil.wallIds, ...ceilRemove.wallIds];
+      }
+    }
     return {
       ceils: [...state.ceils]
     }
