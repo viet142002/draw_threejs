@@ -63,23 +63,22 @@ export const detectMousemoveAxes = (start: Vector3, target: Vector3) => {
   return 'x';
 }
 
-const DISTANCE = 0.2;
 /**
  * Get snap wall from position mouse
  * @param walls 
  * @param position 
  * @returns 
  */
-export const getSnapWall = (walls: Array<IWall>, position: Vector3) => {
+export const getSnapWall = (walls: Array<IWall>, position: Vector3, snapProp?: ISnap, distance = 0.2) => {
   const snap: ISnap = {
-    snapStart: null,
-    snapEnd: null
+    snapStart: snapProp?.snapEnd || null,
+    snapEnd: snapProp?.snapStart || null,
   };
   for (const wall of walls) {
-    if (wall.start.distanceTo(position) < DISTANCE && !wall.snap.snapStart) {
+    if (wall.start.distanceTo(position) < distance && !wall.snap.snapStart) {
       snap.snapStart = wall;
     }
-    if (wall.end.distanceTo(position) < DISTANCE && !wall.snap.snapEnd) {
+    if (wall.end.distanceTo(position) < distance && !wall.snap.snapEnd) {
       snap.snapEnd = wall;
     }
   }

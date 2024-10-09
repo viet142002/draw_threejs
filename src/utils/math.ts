@@ -1,6 +1,6 @@
 import { Vector3 } from "three";
 import { getDirectionString } from "./drawWall";
-import { ISnap } from "../types";
+import { ISnap, IWall } from "../types";
 
 export const getDistanceFromPoints = (start: Vector3, end: Vector3) => {
   if (!start || !end) return 0;
@@ -47,4 +47,10 @@ export const getPositionDimFromPoints = (start?: Vector3 | null, end?: Vector3, 
     start: vector3,
     end: vector3,
   }
+}
+
+export const getWallFromWallIds = (walls: Array<IWall>, ids: Array<string>) => {
+  const needWall = walls.filter(wall => ids.includes(wall.id));
+  if (!needWall.length) return [];
+  return ids.map(id => needWall.find(wall => wall.id === id)).filter(wall => wall !== undefined);
 }

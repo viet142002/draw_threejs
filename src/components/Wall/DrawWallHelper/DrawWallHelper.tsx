@@ -13,6 +13,11 @@ function DrawWallHelper() {
   const { setWallDrawPoints, wallDrawPoints, isDrawWall, addWall, walls } = useDrawStore(state => state);
   const addDim = useDrawStore(state => state.addDim);
 
+  useEffect(() => {
+    console.log("walls", walls);
+  }, [walls]);
+
+
   const positionAxeFromStart = useMemo(() => getPositionAxesFromPoints(wallDrawPoints?.start || new Vector3(), currentPosition), [currentPosition, wallDrawPoints.start]);
 
   const pointsDim = useMemo(() => getPositionDimFromPoints(wallDrawPoints.start, positionAxeFromStart, 0.25, wallDrawPoints.snap), [positionAxeFromStart, wallDrawPoints.snap, wallDrawPoints.start]);
@@ -20,8 +25,8 @@ function DrawWallHelper() {
   // set point for draw wall start and end
   const handleSetPoint = useCallback(() => {
     if (!isDrawWall) return;
-    const snap = getSnapWall(walls, currentPosition);
     if (!wallDrawPoints.start) {
+      const snap = getSnapWall(walls, currentPosition);
       setWallDrawPoints(
         {
           start: snap?.snapEnd?.end ?? snap?.snapStart?.start ?? currentPosition,
@@ -35,27 +40,31 @@ function DrawWallHelper() {
       );
       return;
     }
-    const wallId = `wall_${new Date().getTime()}`
+    const wallId = `wall_${new Date().getTime()}`;
+    const { snap, start } = wallDrawPoints;
+    const snapSecond = getSnapWall(walls, positionAxeFromStart, snap, 0.05);
 
-    addWall({
-      start: wallDrawPoints.needRevertDirect ? getPositionAxesFromPoints(wallDrawPoints.start, currentPosition) : wallDrawPoints.start,
-      end: wallDrawPoints.needRevertDirect ? wallDrawPoints.start : getPositionAxesFromPoints(wallDrawPoints.start, currentPosition),
+    const newWall = {
+      start: wallDrawPoints.needRevertDirect ? snapSecond.snapEnd?.end ?? positionAxeFromStart : start,
+      end: wallDrawPoints.needRevertDirect ? start : snapSecond.snapStart?.start ?? positionAxeFromStart,
       height: HEIGHT_WALL,
       id: wallId,
       snap: {
-        snapStart: wallDrawPoints.snap.snapStart?.id ?? null,
-        snapEnd: wallDrawPoints.snap.snapEnd?.id ?? null
+        snapStart: snap.snapStart?.id ?? snapSecond.snapEnd?.id ?? null,
+        snapEnd: snap.snapEnd?.id ?? snapSecond.snapStart?.id ?? null,
       },
       ceil: null,
-    });
+    };
+    addWall(newWall);
+    const pointDim = getPositionDimFromPoints(newWall.start, newWall.end, 0.25, snap);
     addDim({
       id: `dim_${new Date().getTime()}`,
       wallId: wallId,
-      distance: getDistanceFromPoints(pointsDim.start, pointsDim.end),
-      end: pointsDim.end,
-      start: pointsDim.start,
+      distance: getDistanceFromPoints(pointDim.start, pointDim.end),
+      end: pointDim.end,
+      start: pointDim.start,
     })
-  }, [addDim, addWall, currentPosition, isDrawWall, pointsDim.end, pointsDim.start, setWallDrawPoints, wallDrawPoints.needRevertDirect, wallDrawPoints.snap.snapEnd?.id, wallDrawPoints.snap.snapStart?.id, wallDrawPoints.start, walls]);
+  }, [addDim, addWall, currentPosition, isDrawWall, positionAxeFromStart, setWallDrawPoints, wallDrawPoints, walls]);
 
   // draw wall realtime
   useEffect(() => {

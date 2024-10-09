@@ -32,8 +32,10 @@ export interface ISnapString {
 
 export interface ICeil {
   id: string;
-  points: Array<Vector3>;
-  height: Array<number>;
+  // points: Array<Vector3>;
+  // walls: Array<Pick<IWall, 'snap' | 'id' | 'end' | 'start' | 'height'>>;
+  // height: Array<number>;
+  wallIds: Array<string>;
 }
 
 export interface IDim {
