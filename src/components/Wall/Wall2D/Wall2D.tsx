@@ -1,10 +1,11 @@
 import { Line } from "@react-three/drei";
-import { useDrawStore } from "../../../stores/draw";
+import { useDrawWallStore } from "../../../stores";
 import { memo } from "react";
 import { useSelectStore } from "../../../stores/select";
 
 function Wall2D() {
-  const walls = useDrawStore(state => state.walls);
+    //   const walls = useDrawStore(state => state.walls);
+  const walls = useDrawWallStore(state => state.walls);
   const setSelected = useSelectStore(state => state.setSelected);
 
   const handleClick = (e: any) => {
@@ -15,10 +16,17 @@ function Wall2D() {
 
   return <>
     {walls.map((wall, index) => (
-      <Line onClick={handleClick} key={index} points={[wall.start, wall.end]} color="blue" lineWidth={10} userData={{
-        id: wall.id,
-        height: wall.height
-      }} />
+      <Line 
+        onClick={handleClick} 
+        key={index} 
+        points={[wall.start, wall.end]} 
+        color="blue" 
+        lineWidth={10} 
+        userData={{
+            id: wall.id,
+            height: wall.height
+        }} 
+      />
     ))}
   </>
 }

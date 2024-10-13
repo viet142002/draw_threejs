@@ -1,11 +1,20 @@
 import { create } from "zustand";
-import { TypeDraw } from "../types";
 
-interface ISelected {
-  type: TypeDraw;
+type Window = {
+  type: 'window';
   id: string;
-  height: number
+  height: number;
+  width: number;
+  depth: number;
 }
+
+type Wall = {
+  type: 'wall';
+  id: string;
+  height: number;
+}
+
+type ISelected = Window | Wall;
 
 interface ISelectStore {
   selected: ISelected | null;

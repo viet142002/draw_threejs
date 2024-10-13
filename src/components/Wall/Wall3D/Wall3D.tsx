@@ -1,116 +1,179 @@
 import { useGLTF } from "@react-three/drei";
-import { Fragment, memo, useEffect, useMemo, useRef } from "react";
-import { Group, Matrix4, Mesh, Plane, Quaternion, Vector3 } from "three";
-import { useDrawStore } from "../../../stores/draw";
+import { memo, useEffect, useMemo } from "react";
+import { Box3, BoxGeometry, BufferGeometry, Euler, Material, Matrix4, Mesh, Plane, Quaternion, Vector3 } from "three";
+import { useDrawWallStore, useDrawWindowStore } from "../../../stores";
 import { SIZE_BRICK } from "../../../constants";
+import { IWall } from "../../../types";
+import { decompose } from "../../../utils/matrix";
+import { useThree } from "@react-three/fiber";
+import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
+import { useShallow } from "zustand/react/shallow";
 
 function Wall3D() {
-  const walls = useDrawStore(state => state.walls);
+    const walls = useDrawWallStore(useShallow(state => state.walls));
+    const { windows, unableUpdate } = useDrawWindowStore(state => state);
+    const { nodes } = useGLTF("assets/models/4_panel.glb");
+    const { scene } = useThree();
 
-  return <>
-    <group>
-      {
-        walls.map((wall) => {
-          const { numberOfBrick, matrix, remainingLength, direction, id, end } = wall;
-          if (!matrix) return null;
-          return <Fragment key={id}>
-            {Array(numberOfBrick).fill(0).map((_, index) => (<InstanceWall3D key={index} matrix={matrix?.[index]} />))}
-            {
-              remainingLength > 0 && <>
-                <InstanceWall3D
-                  matrix={matrix?.[numberOfBrick]}
-                  remainingLength={remainingLength}
-                  direction={direction}
-                  end={end}
-                />
-                <RemainderComponent
-                  position={end}
-                  direction={direction}
-                  height={wall.height}
-                />
-              </>
+    useEffect(() => {
+        console.log('wall3d', walls);
+    }, [walls]);
+
+
+    const { material, geometry } = useMemo(() => {
+        let material: Material | null = null;
+        let geometry: BufferGeometry | null = null;
+        if (nodes) {
+            const mesh = nodes['4_panel'] as Mesh
+            material = mesh.material as Material;
+            geometry = mesh.geometry;
+        }
+        return { material, geometry };
+    }, [nodes]);
+
+    useEffect(() => {
+        const distanceToFloor = 0.5;
+        const evaluator = new Evaluator();
+        windows.forEach(window => {
+            const wallGroup = scene.getObjectByName(window.wallId);
+            if (!wallGroup || !window.needUpdate) return;
+            const windowBrush = new Brush(new BoxGeometry(window.width, window.height, window.depth + 0.5));
+            windowBrush.applyMatrix4(window.matrix.clone().multiply(new Matrix4().setPosition(0, window.height / 2 + distanceToFloor, 0)));
+            windowBrush.updateMatrixWorld();
+            windowBrush.geometry.computeBoundingBox();
+            const box3Window = windowBrush.geometry.boundingBox;
+            box3Window?.applyMatrix4(window.matrix);
+            const added: Array<Brush> = [];
+            const needRemove: Array<Mesh> = [];
+            wallGroup?.traverse((object) => {
+                if (object instanceof Mesh && box3Window) {
+                    object.updateMatrixWorld();
+                    object.geometry.computeBoundingBox();
+                    const box3Wall: Box3 = object.geometry.boundingBox;
+                    box3Wall?.applyMatrix4(object.matrixWorld);
+                    if (box3Wall.intersectsBox(box3Window)) {
+                        console.log('intersect', object);
+                        const wallBrush = new Brush(object.geometry, object.material);
+                        wallBrush.applyMatrix4(object.matrixWorld);
+                        wallBrush.updateMatrixWorld();
+                        const result = evaluator.evaluate(wallBrush, windowBrush, SUBTRACTION);
+                        added.push(result);
+                        needRemove.push(object);
+                    }
+                }
+            });
+            if (added.length > 0) {
+                console.log('added', added);
+                wallGroup.remove(...needRemove);
+                wallGroup?.add(...added);
+                unableUpdate(window.id);
             }
-          </Fragment>
-        })
-      }
-    </group>
-  </>
+        });
+    }, [scene, unableUpdate, windows]);
+
+    if (!material || !geometry) return null;
+    return <>
+        {walls.map((wall) => <WallGroup
+            key={wall.id}
+            wall={wall}
+            geometry={geometry}
+            material={material}
+        />)}
+    </>
 }
 
 export default memo(Wall3D);
 
-interface InstanceWall3DProps {
-  matrix: Matrix4;
-  remainingLength?: number;
-  direction?: Vector3;
-  end?: Vector3;
+interface WallGroupProps {
+    wall: IWall;
+    geometry: BufferGeometry;
+    material: Material;
 }
 
-const InstanceWall3D = ({ matrix, remainingLength, direction, end }: InstanceWall3DProps) => {
-  const ref = useRef<Group>();
-  const { scene } = useGLTF("assets/models/4_panel.glb");
-
-  const obj = useMemo(() => {
-    let objScene: Mesh | null = null;
-    if (scene) {
-      scene.traverse((child) => {
-        if (child instanceof Mesh) {
-          objScene = new Mesh(child.geometry.clone(), child.material.clone());
+const WallGroup = memo(({ wall, geometry, material }: WallGroupProps) => {
+    const { numberOfBrick, matrix, remainingLength, direction, end } = wall;
+    if (!matrix) return null;
+    return <group name={wall.id}>
+        {Array(numberOfBrick).fill(0).map((_, index) => (
+            <InstanceWall3D key={index} matrix={matrix?.[index]} geometry={geometry} material={material} />
+        ))}
+        {
+            remainingLength > 0 && <>
+                <InstanceWall3D
+                    matrix={matrix?.[numberOfBrick]}
+                    material={material}
+                    geometry={geometry}
+                    end={end}
+                    remainingLength={remainingLength}
+                    direction={direction}
+                    wallHeight={wall.height}
+                />
+                <RemainderComponent
+                    position={end}
+                    direction={direction}
+                    height={wall.height}
+                />
+            </>
         }
-      });
-    }
-    return objScene;
-  }, [scene]);
 
-  const clipPlane = useMemo(() => {
-    if (direction && end) {
-      return new Plane().setFromNormalAndCoplanarPoint(direction.multiplyScalar(-1), end);
-    }
-    return null;
-  }, [direction, end]);
-  useEffect(() => {
-    if (ref.current && matrix) {
-      const current = ref.current;
-      current.matrix.copy(matrix);
-      current.matrixAutoUpdate = false;
-      if (current && remainingLength && clipPlane && current instanceof Mesh) {
-        current.material.clippingPlanes = [clipPlane];
-        current.material.clipIntersection = true;
-        current.material.needsUpdate = true;
-      }
-    }
-  }, [clipPlane, direction, end, matrix, remainingLength]);
+    </group>
+})
 
-  if (!obj) return null;
-  return <primitive ref={ref} object={obj} />
+interface InstanceWall3DProps {
+    matrix: Matrix4;
+    remainingLength?: number;
+    direction?: Vector3;
+    end?: Vector3;
+    geometry: BufferGeometry;
+    material: Material;
+    wallHeight?: number;
 }
+
+const InstanceWall3D = memo(({ matrix, direction, end, geometry, material }: InstanceWall3DProps) => {
+    const clipPlane = useMemo(() => {
+        if (direction && end) {
+            return new Plane().setFromNormalAndCoplanarPoint(direction.clone().multiplyScalar(-1), end);
+        }
+        return null;
+    }, [direction, end]);
+
+    const materialCut = useMemo(() => {
+        if (!clipPlane) return material;
+        const materialCut = material.clone();
+        materialCut.clippingPlanes = [clipPlane];
+        materialCut.clipIntersection = true;
+        return materialCut;
+    }, [material, clipPlane]);
+
+    return <primitive object={new Mesh(geometry.clone(), materialCut)} {...decompose(matrix)} />
+})
 
 interface RemainderComponentProps {
-  position: Vector3;
-  direction: Vector3;
-  height: number;
+    position: Vector3;
+    direction: Vector3;
+    height: number;
 }
 
 const RemainderComponent = ({ direction, height, position }: RemainderComponentProps) => {
-  const { scene } = useGLTF("assets/models/4_panel_01_05.glb");
-  const ref = useRef<Group>();
+    const { scene } = useGLTF("assets/models/4_panel_01_05.glb");
 
-  const clonedScene = useMemo(() => scene.clone(), [scene]);
-  const matrix = useMemo(() => {
-    const m = new Matrix4();
-    const rotation = new Quaternion();
-    rotation.setFromUnitVectors(new Vector3(-1, 0, 0), direction);
-    const scale = new Vector3(1, height / SIZE_BRICK.height, 1);
-    m.compose(position, rotation, scale);
-    return m;
-  }, [direction, height, position]);
+    const props = useMemo(() => {
+        const quaternion = new Quaternion();
+        quaternion.setFromUnitVectors(new Vector3(1, 0, 0), direction);
+        const rotation = new Euler().setFromQuaternion(quaternion);
+        const scale = new Vector3(1, height / SIZE_BRICK.height, 1);
+        return {
+            position: position.toArray() as [number, number, number],
+            rotation: rotation.toArray() as [number, number, number],
+            scale: scale.toArray() as [number, number, number]
+        };
+    }, [direction, height, position]);
 
-  useEffect(() => {
-    if (ref.current) {
-      ref.current.matrix.copy(matrix);
-      ref.current.matrixAutoUpdate = false;
-    }
-  }, [matrix]);
+    const clonedScene = useMemo(() => {
+        const meshCloned = scene.children[0].clone() as Mesh;
+        return meshCloned;
+    }, [scene.children]);
 
-  return <primitive object={clonedScene} ref={ref} />
+    return <primitive object={clonedScene} {...props} />
 }
+

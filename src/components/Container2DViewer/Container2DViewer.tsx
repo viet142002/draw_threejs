@@ -5,6 +5,7 @@ import DrawContainer from "../DrawContainer/DrawContainer";
 import Wall2D from "../Wall/Wall2D/Wall2D";
 import Edit from "../Edit/Edit";
 import Dimension from "../Dim/Dim";
+import Window2D from "../Window/Window2D";
 
 interface Container2DViewerProps {
   className?: string;
@@ -40,6 +41,7 @@ function Container2DViewer({ className }: Container2DViewerProps) {
         <DrawContainer />
 
         <Wall2D />
+        <Window2D />
         <Dimension />
       </Canvas>
       <Edit />
